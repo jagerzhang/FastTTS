@@ -1,0 +1,4 @@
+.temp
+env_ext.sh
+logs/*
+*.log*
