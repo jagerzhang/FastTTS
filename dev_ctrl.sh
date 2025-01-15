@@ -81,7 +81,6 @@ update() {
         --index-url https://pypi.tuna.tsinghua.edu.cn/simple/
     "
     docker exec -ti "${project_name}" bash -c "
-        pip3 uninstall -y fastflyer fastkit &&
         pip3 install --upgrade fastflyer fastkit \
         --index-url https://pypi.tuna.tsinghua.edu.cn/simple/
     "
