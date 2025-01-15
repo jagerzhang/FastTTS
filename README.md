@@ -15,7 +15,7 @@ FastFlyer 是基于 FastAPI 设计的轻量级 API 开发框架。在 FastAPI �
 ```
 docker run --name fasttts -d -p 8080:8080 jagerzhang/fast-tts 
 ```
-成功启动后，访问：`http://<host>:8080/tts/docs` 可以看到效果。
+成功启动后，访问：`http://<host>:8080/tts/docs` 可以看到页面效果。
 
 ## 简单鉴权
 
@@ -23,9 +23,9 @@ docker run --name fasttts -d -p 8080:8080 jagerzhang/fast-tts
 docker run -d \
     --name fasttts \
     -p 8080:8080 \
-    -e flyer_auth_enable=1 \    # 启用 basiccauth 鉴权
-    -e flyer_auth_user=guest \  # basicauth 账号 
-    -e flyer_auth_pass=guest \  # basicauth 密码
+    -e flyer_auth_enable=1 \    # 【可选】启用 BasicAuth 鉴权
+    -e flyer_auth_user=guest \  # 【可选】BasicAuth 账号 
+    -e flyer_auth_pass=guest \  # 【可选】BasicAuth 密码
     jagerzhang/fast-tts 
 ```
 

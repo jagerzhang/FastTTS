@@ -12,7 +12,7 @@ from fastapi.responses import PlainTextResponse, JSONResponse
 from fastflyer.schemas import DataResponse
 from fastapi.exceptions import HTTPException
 from fastapi import Query
-from fastflyer import APIRouter, status
+from fastflyer import APIRouter, status, config
 from fastkit.cache import get_cacheout_pool
 from .schema import TTSToolsRequest
 
@@ -86,7 +86,7 @@ async def legado_url(request: Request, params: TTSToolsRequest = Query()):
     payload.update(headers)
 
     payload = json.dumps(payload)
-    url = f"{origin}/tts/stream, {payload}"
+    url = f"{origin}{config.PREFIX}/stream, {payload}"
     return PlainTextResponse(content=url)
 
 
@@ -111,7 +111,7 @@ async def legado_import(request: Request, params: TTSToolsRequest = Query()):
     payload.update(headers)
 
     payload = json.dumps(payload)
-    url = f"{origin}/tts/stream, {payload}"
+    url = f"{origin}{config.PREFIX}/stream, {payload}"
     content = {
         "contentType": "audio/mp3",
         "enabledCookieJar": False,

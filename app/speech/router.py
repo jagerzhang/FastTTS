@@ -4,6 +4,14 @@
 """
 from io import BytesIO
 import edge_tts
+from tenacity import (
+    retry,
+    stop_any,
+    stop_after_delay,
+    stop_after_attempt,
+    wait_exponential,
+)
+
 from fastapi import Request
 from fastapi.responses import StreamingResponse
 from fastflyer.schemas import DataResponse
@@ -24,12 +32,24 @@ async def get_origin_url(request: Request) -> str:
     return f"{scheme}://{host}"
 
 
-async def stream_audio(text, voice, rate, volume, pitch) -> None:
-    """生成音频流"""
+@retry(
+    wait=wait_exponential(multiplier=1, min=1, max=10),
+    stop=stop_any((stop_after_delay(60)), stop_after_attempt(3)),
+    reraise=True,
+)
+async def generate_audio_stream(text, voice, rate, volume, pitch):
+    """生成音频流并处理重试逻辑"""
     communicate = edge_tts.Communicate(text=text, voice=voice, rate=rate, volume=volume, pitch=pitch)
     async for chunk in communicate.stream():
         if chunk["type"] == "audio":
             yield chunk["data"]
+    raise edge_tts.exceptions.NoAudioReceived("No audio was received. Please verify that your parameters are correct.")
+
+
+async def stream_audio(text, voice, rate, volume, pitch):
+    """包装生成音频流的函数"""
+    async for audio_chunk in generate_audio_stream(text, voice, rate, volume, pitch):
+        yield audio_chunk
 
 
 @router.post("/stream", response_model=DataResponse, summary="语音合成音频流接口")
