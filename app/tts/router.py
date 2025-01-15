@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-路由文件
+路由定义
 """
+
+import json
 from io import BytesIO
 import edge_tts
-from fastapi.responses import StreamingResponse
+from fastapi import Request
+from fastapi.responses import StreamingResponse, PlainTextResponse
 from fastflyer.schemas import DataResponse
 from fastflyer import APIRouter, status
-from .schema import DemoRequest
+from .schema import TTSBaseRequest, TTSFullRequest
 
 
 router = APIRouter(tags=["语音合成"])
@@ -22,7 +25,7 @@ async def stream_audio(text, voice, **kwargs) -> None:
 
 
 @router.post("/stream", response_model=DataResponse, summary="语音合成音频流接口")
-async def make_stream(params: DemoRequest):
+async def stream(params: TTSFullRequest):
     """
     语音合成音频流接口
     """
@@ -31,15 +34,15 @@ async def make_stream(params: DemoRequest):
 
 
 @router.post("/file", response_model=DataResponse, summary="语音合成音频文件接口")
-async def make_file(params: DemoRequest):
+async def make_file(params: TTSFullRequest):
     """
     语音合成音频文件接口
     """
-    audio_buffer = BytesIO()  # 创建一个 BytesIO 对象来暂存音频数据
+    audio_buffer = BytesIO()
     async for chunk in stream_audio(text=params.text, voice=params.voice):
-        audio_buffer.write(chunk)  # 将音频数据写入 BytesIO 对象
+        audio_buffer.write(chunk)
 
-    audio_buffer.seek(0)  # 将指针移动到 BytesIO 的开头
+    audio_buffer.seek(0)
     return StreamingResponse(
         audio_buffer,
         media_type="application/octet-stream",
@@ -54,3 +57,24 @@ async def get_voices():
         return DataResponse(data=voices)
     except Exception as e:
         return DataResponse(code=status.HTTP_500_INTERNAL_SERVER_ERROR, message=f"获取错误：{str(e)}")
+
+
+@router.post("/legado_url", summary="一键生成源阅读url")
+async def legado(request: Request, params: TTSBaseRequest):
+    """
+    一键生成源阅读url
+    """
+    origin = request.headers.get("origin", "http://localhost:8080")
+    payload = {
+        "method": "POST",
+        "body": {
+            "text": "{{speakText}}",
+            "voice": params.voice,
+            "volume": params.volume,
+            "rate": "{{String(speakSpeed)}}",
+            "pitch": params.pitch,
+        },
+    }
+    payload = json.dumps(payload)
+    url = f"{origin}/tts/stream, {payload}"
+    return PlainTextResponse(content=url)

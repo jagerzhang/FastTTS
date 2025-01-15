@@ -3,9 +3,13 @@ cd $(cd $(dirname $0) && pwd)
 
 get_cpu_limit()
 {
-    cfs_quota_us=$(cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us)
-    cfs_period_us=$(cat /sys/fs/cgroup/cpu/cpu.cfs_period_us)
-    cpu_limit=$(expr ${cfs_quota_us} / ${cfs_period_us})
+   if test -f /dev/cgroup/cpu/cpu.cfs_quota_us ; then
+        cfs_quota_us=$(cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us)
+        cfs_period_us=$(cat /sys/fs/cgroup/cpu/cpu.cfs_period_us)
+        cpu_limit=$(expr ${cfs_quota_us} / ${cfs_period_us})
+    else
+        cpu_limit=0
+    fi
     if [[ ${cpu_limit} -ne 0 ]];then
         export CPU_LIMIT=${cpu_limit}
     else
