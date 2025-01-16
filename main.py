@@ -25,13 +25,15 @@ def main_cmd():
     reload = int(getenv("flyer_reload", 0))
     log_level = getenv("flyer_console_log_level", "info")
     access_log = True if int(getenv("flyer_access_log", "1")) else False
-    uvicorn.run(app="main:app",
-                host=bind_host,
-                port=int(bind_port),
-                log_level=log_level,
-                access_log=access_log,
-                reload=reload,
-                workers=workers)
+    uvicorn.run(
+        app="main:app",
+        host=bind_host,
+        port=int(bind_port),
+        log_level=log_level,
+        access_log=access_log,
+        reload=reload,
+        workers=workers,
+    )
 
 
 if __name__ == "__main__":

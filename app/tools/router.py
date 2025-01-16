@@ -45,22 +45,34 @@ async def get_headers(request: Request) -> dict:
     return {"headers": {"Authorization": f"Basic {encoded_credentials}", "Content-Type": "application/json"}}
 
 
-@router.get("/voices", response_model=DataResponse, summary="获取所有语音列表")
-async def get_voices(keyword: str = Query(default="", example="", title="过滤关键词", description="过滤关键词")):
+@router.get("/voices", response_model=DataResponse, summary="实时获取所有语音列表")
+async def get_voices(
+    keyword: str = Query(default="", example="", title="过滤关键词", description="过滤关键词"),
+    format: str = Query(
+        default="full",
+        example="full",
+        title="返回内容",
+        description="返回内容，可选 full / short，默认为 full 即全量内容",
+    ),
+):
     @local_cache.cache_result(ttl=86400)
     async def _get_all_voices():
         """获取所有语音列表"""
         return await edge_tts.list_voices()
 
-    async def _get_voices(keyword: str = None):
+    async def _get_voices(keyword: str = None, format: str = "full"):
         """根据关键词获取语音列表"""
-        all_voices = await _get_all_voices()
+        data = await _get_all_voices()
         if keyword:
-            return [voice for voice in all_voices if str(keyword).lower() in voice["ShortName"].lower()]
-        return all_voices
+            data = [voice for voice in data if str(keyword).lower() in voice["ShortName"].lower()]
+
+        if format == "short":
+            data = [voice["ShortName"] for voice in data]
+
+        return data
 
     try:
-        voices = await _get_voices(keyword)
+        voices = await _get_voices(keyword, format)
         return DataResponse(data=voices)
     except Exception as e:
         return DataResponse(code=status.HTTP_500_INTERNAL_SERVER_ERROR, message=f"获取错误：{str(e)}")
