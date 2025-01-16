@@ -15,9 +15,11 @@ FastFlyer 是基于 FastAPI 设计的轻量级 API 开发框架。在 FastAPI �
 ```
 docker run --name fasttts -d -p 8080:8080 jagerzhang/fast-tts 
 ```
-成功启动后，访问：`http://<host>:8080/tts/docs` 可以看到页面效果。
+成功启动后，访问：`http://<host>:8080/tts/docs` 可以看到 `Swagger` 工具页面。
 
 ## 简单鉴权
+
+如果需要外网访问，建议开启接口鉴权：
 
 ```
 docker run -d \
@@ -29,7 +31,34 @@ docker run -d \
     jagerzhang/fast-tts 
 ```
 
+开启鉴权后，生成源阅读的配置也会自动带上鉴权头部，可以无缝对接。
+
+## 对接源阅读
+
+服务已集成和源阅读APP的配置生成、一键导入工具，请在服务的`Swagger`页面参考以下指引使用。
+
+### 一键生成源阅读 Url
+
+参考如图步骤，得到 `JSON` 配置，填写到源阅读新增语音的`URL`栏位即可：
+
+![image](static/doc1.png)
+
+![image](static/doc2.png)
+
+![image](static/doc3.png)
+
+![image](static/doc4.png)
+
+### 源阅读一键导入
+
+同样的，参考如图步骤，得到一键导入的 `Url`，然后到源阅读使用网络导入即可：
+
+![image](static/doc5.png)
+
+![image](static/doc6.png)
+
 ## 二次开发
+
 初次上手，请仔细阅读FastFlyer说明文档：[正式开发](https://github.com/jagerzhang/fastflyer#正式开发)
 
 ## 环境变量

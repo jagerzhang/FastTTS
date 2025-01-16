@@ -2,20 +2,14 @@
 """
 路由定义
 """
+import random
 from io import BytesIO
+from asyncio import sleep
 import edge_tts
-from tenacity import (
-    retry,
-    stop_any,
-    stop_after_delay,
-    stop_after_attempt,
-    wait_exponential,
-)
-
 from fastapi import Request
 from fastapi.responses import StreamingResponse
 from fastflyer.schemas import DataResponse
-from fastflyer import APIRouter
+from fastflyer import APIRouter, logger
 from fastkit.cache import get_cacheout_pool
 from .schema import TTSFullRequest
 
@@ -32,18 +26,20 @@ async def get_origin_url(request: Request) -> str:
     return f"{scheme}://{host}"
 
 
-@retry(
-    wait=wait_exponential(multiplier=1, min=1, max=10),
-    stop=stop_any((stop_after_delay(60)), stop_after_attempt(3)),
-    reraise=True,
-)
-async def generate_audio_stream(text, voice, rate, volume, pitch):
+async def generate_audio_stream(text, voice, rate, volume, pitch, retries=10):
     """生成音频流并处理重试逻辑"""
-    communicate = edge_tts.Communicate(text=text, voice=voice, rate=rate, volume=volume, pitch=pitch)
-    async for chunk in communicate.stream():
-        if chunk["type"] == "audio":
-            yield chunk["data"]
-    raise edge_tts.exceptions.NoAudioReceived("No audio was received. Please verify that your parameters are correct.")
+    for attempt in range(retries):
+        try:
+            communicate = edge_tts.Communicate(text=text, voice=voice, rate=rate, volume=volume, pitch=pitch)
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    yield chunk["data"]
+            break  # 如果成功，跳出循环
+        except Exception as e:
+            logger.warning(f"音频流获取失败: {e}，尝试重新获取，第 {attempt + 1} 次重试")
+            if attempt == retries - 1:
+                raise e
+            await sleep(random.randint(1, 3))
 
 
 async def stream_audio(text, voice, rate, volume, pitch):
