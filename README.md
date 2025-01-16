@@ -15,7 +15,7 @@ FastFlyer 是基于 FastAPI 设计的轻量级 API 开发框架。在 FastAPI �
 ```
 docker run --name fasttts -d -p 8080:8080 jagerzhang/fast-tts 
 ```
-成功启动后，访问：`http://<host>:8080/tts/docs` 可以看到 `Swagger` 工具页面。
+成功启动后，访问：`http://<host>:8080/speech/docs` 可以看到 `Swagger` 工具页面。
 
 ## 简单鉴权
 
