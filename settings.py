@@ -18,7 +18,7 @@ class CustomConfig(BaseConfig):
         (
             "**中文名称**：FastTTS 语音合成服务",
             "**功能说明**：基于 edge-tts 的语音合成服务，可以将文字合成为语音文件或文件流，支持和源阅读（legado）无缝对接。",
-            "**框架源码**：[Git](https://git.woa.com/nops/framework/fastflyer)",
+            "**框架源码**：[Git](https://github.com/jagerzhang/fastflyer)",
             f"**接口文档**：[ReDoc]({PREFIX}/redoc)",
             f"**快速上手**：[SwaggerUI]({PREFIX}/docs)",
             f"**最新发布**：{BaseConfig.RELEASE_DATE}",
