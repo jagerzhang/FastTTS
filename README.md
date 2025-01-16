@@ -62,7 +62,7 @@ docker run -d \
 初次上手，请仔细阅读FastFlyer说明文档：[正式开发](https://github.com/jagerzhang/fastflyer#正式开发)
 
 ## 环境变量
-项目支持通过七彩石或环境变量来修改各种配置，优先级上七彩石 > 环境变量，详细参数说明请阅读FastFlyer说明文档：[环境变量](https://github.com/jagerzhang/fastflyer#环境变量)
+项目支持通过环境变量来修改各种配置，详细参数说明请阅读FastFlyer说明文档：[环境变量](https://github.com/jagerzhang/fastflyer#环境变量)
 
 ## 如何加入
 PR is welcome!
