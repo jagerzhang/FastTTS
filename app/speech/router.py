@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse
 from fastflyer.schemas import DataResponse
 from fastflyer import APIRouter, logger
 from fastkit.cache import get_cacheout_pool
+from fastflyer.authorize import authorize
 from .schema import TTSFullRequest
 
 

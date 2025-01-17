@@ -5,13 +5,14 @@
 
 import json
 import base64
-from os import getenv
+from os import getenv, path
 import edge_tts
 from fastapi import Request
-from fastapi.responses import PlainTextResponse, JSONResponse
+from fastapi.responses import PlainTextResponse, JSONResponse, HTMLResponse
 from fastflyer.schemas import DataResponse
 from fastapi.exceptions import HTTPException
 from fastapi import Query
+from fastapi.templating import Jinja2Templates
 from fastflyer import APIRouter, status, config
 from fastkit.cache import get_cacheout_pool
 from .schema import TTSToolsRequest
@@ -19,6 +20,9 @@ from .schema import TTSToolsRequest
 router = APIRouter(tags=["实用工具"], prefix="/tools")
 
 local_cache = get_cacheout_pool("tts")
+
+TEMPLATE_DIR = f"{path.dirname(path.abspath(__file__))}/templates"
+templates = Jinja2Templates(directory=TEMPLATE_DIR)
 
 
 async def get_origin_url(request: Request) -> str:
@@ -43,6 +47,22 @@ async def get_headers(request: Request) -> dict:
         )
     encoded_credentials = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode("utf-8")
     return {"headers": {"Authorization": f"Basic {encoded_credentials}", "Content-Type": "application/json"}}
+
+
+@router.get("/", summary="实时获取所有语音列表")
+async def tools(request: Request):
+    html_args = {}
+    html_args["prefix"] = config.PREFIX
+    html_args["api"] = f"{config.PREFIX}/stream"
+    html_args["docs"] = f"{config.PREFIX}/docs"
+    html_args["redoc"] = f"{config.PREFIX}/redoc"
+    html_args["tools"] = f"{config.PREFIX}/tools"
+    html_args["request"] = request
+
+    username = getenv("flyer_auth_user", "")
+    password = getenv("flyer_auth_pass", "")
+    html_args["basicauth"] = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode("utf-8")
+    return templates.TemplateResponse("index.html", context=html_args)
 
 
 @router.get("/voices", response_model=DataResponse, summary="实时获取所有语音列表")

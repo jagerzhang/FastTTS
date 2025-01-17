@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="在线语音合成、文字转语音、文字合成配音服务，基于edge-tts语音合成服务提供"/>
+	<meta name="keyword" content="语音合成,文字合成,文字配音,合成语音,edge-tts"/>
+  <title>语音合成-文字转语音-srt字幕转语音 | FastTTS</title>
+  <link rel="icon" type="image/x-icon" href="{{prefix}}/app/static/favicon.ico">
+  <link href="{{prefix}}/app/static/style.css?ver=1.0" rel="stylesheet">
+  <script src="{{prefix}}/app/static/vue.js"></script>
+	
+	<style>
+	#layui-nav {
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 99;
+    overflow: auto;
+    white-space: nowrap;
+    background: #eee;
+}
+#legadoConfig {
+    background-color: #002b36; /* Solarized Dark 背景颜色 */
+    color: #839496; /* Solarized Dark 文本颜色 */
+    border: 1px solid #586e75; /* Solarized Dark 边框颜色 */
+    border-radius: 4px; /* 圆角 */
+    padding: 10px; /* 内边距 */
+    overflow: auto; /* 处理溢出 */
+    font-family: 'Courier New', Courier, monospace; /* 使用等宽字体 */
+}
+
+/* 高亮代码的样式 */
+#legadoConfig pre {
+    margin: 0; /* 去除默认边距 */
+}
+.layui-nav .layui-nav-item {
+    position: relative;
+    display: inline-block;
+    margin-top: 0;
+    list-style: none;
+    vertical-align: middle;
+    line-height: 60px;
+}
+.layui-nav .layui-nav-item a {
+    color: #333;
+}
+.layui-nav .layui-nav-item a {
+    display: block;
+    padding: 0 20px;
+    color: #333;
+    transition: all .3s;
+    -webkit-transition: all .3s;
+}
+.layui-nav .layui-nav-item a:hover, .layui-nav .layui-this a {
+    color: #009688;
+    text-decoration: none;
+}
+		#app{margin-top:50px}
+	</style>
+</head>
+<body class="bg-gray-100 font-sans">
+	<ul id="layui-nav" class="layui-nav">
+        <li class="layui-nav-item layui-this"><a href="{{tools}}">在线合成</a></li>
+        <li class="layui-nav-item"><a href="{{redoc}}" target="_blank">接口文档</a></li>
+        <li class="layui-nav-item"><a href="{{docs}}" target="_blank">接口调试</a></li>
+        <li class="layui-nav-item"><a href="https://github.com/jagerzhang/FastTTS" target="_blank" >源码仓库</a></li>
+		</ul>
+<div class="container mx-auto p-4 md:p-8" id="app">
+  <h1 class="text-3xl font-bold mb-2 text-center text-gray-800">文字合成语音/SRT字幕转语音</h1>
+
+  <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div class="mb-4">
+        <label for="fileInput" class="block text-gray-700 font-medium mb-2">选择想合成语音的文件 (srt/txt):</label>
+        <input type="file" id="fileInput" @change="handleFileSelect" accept=".srt,.txt" class="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+    <div class="mb-4">
+      <label for="textInput" class="block  font-medium mb-2 ">输入文本<span class="ms-2 text-xs text-gray-700">行尾加<code>[50]</code>代表添加50毫秒静音，<code>[500]</code>代表加500毫秒静音，中括号内数字代表静音毫秒数</span></label>
+      <textarea placeholder="选择txt文本或srt字幕上传，或直接在此输入要配音的文字" id="textInput" v-model="text" rows="5" class="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+    </div>
+    {% raw %}
+
+    <div id="audioContainer" class="my-3 text-center bg-white flex justify-center py-3 "></div>
+    <div class="mt-8 text-center">
+      <button @click="generateSpeech" :disabled="isGenerating" class="bg-red-500 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed">
+        {{ isGenerating ? '语音合成中...' : '执行合成语音' }}
+      </button>
+    </div>
+    {% endraw %}
+  </div>
+
+  {% raw %}
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <label for="language" class="block text-gray-700 font-medium mb-2">文本语言:</label>
+      <select id="language" v-model="selectedLanguage" class="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option v-for="(roles, language) in language_role" :value="language" :key="language">{{ names[language] }}</option>
+      </select>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6" v-if="selectedLanguage">
+		<div class="flex">
+      <label for="voice" class="block text-gray-700 font-medium mb-2">配音角色</label>
+	  【<span id="shiting" class="cursor-pointer" @click="shiting" style="color:blue">试听</span>】
+		
+		</div>
+      <select id="voice" v-model="selectedVoice" class="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option v-for="voice in voices" :value="voice" :key="voice">{{ voice.split('-').slice(-1)[0] }}</option>
+        </select>
+    </div>  
+ </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-4">
+	<div class="bg-white rounded-lg shadow-md p-6">
+        <label for="speed" class="block text-gray-700 font-medium mb-2">语速 (0.1 -&gt; 5.0):</label>
+        <div class="flex items-center">    
+		 <input type="range" id="speed" v-model.number="speed" min="0.1" max="5.0" step="0.1" class="w-full mr-2">
+					<span class="text-gray-600">{{ speed }}</span>
+		</div>
+    </div>    
+	<div class="bg-white rounded-lg shadow-md p-6">
+        <label for="volume" class="block text-gray-700 font-medium mb-2">音量 (0.1 -&gt; 5):</label>
+        <div class="flex items-center">
+          <input type="range" id="volume" v-model.volume="volume" min="0.1" step="0.1" max="5" class="w-full mr-2">
+          <span class="text-gray-600">{{ volume }}</span>
+        </div>
+    </div>
+  <div class="bg-white rounded-lg shadow-md p-6">
+      <label for="pitch" class="block text-gray-700 font-medium mb-2">音调 (-100 -&gt; +100):</label>
+      <div class="flex items-center">
+        <input type="range" id="pitch" v-model.number="pitch" min="-100" max="100" class="w-full mr-2">
+        <span class="text-gray-600">{{ pitch }}</span>
+      </div>
+  </div>
+</div>	
+  {% endraw %}
+
+  <div class="grid grid-cols-1 md:grid-cols-1 gap-2 mt-4">
+    <div class="bg-white rounded-lg shadow-md p-6">
+          <label for="speed" class="block text-gray-700 font-medium mb-2">源阅读 APP 语音配置（全量复制使用）:</label>
+          <div id="legadoConfig" class="bg-gray-200 p-4 mt-8 rounded">
+            <pre id="legadoConfig" class="text-gray-800"></pre>
+        </div>
+      </div>    
+  </div>	
+</div>
+
+<script>
+  const app = Vue.createApp({
+    data() {
+      return {
+        text: '',
+		names:{
+		    "vi":"越南语",
+			"uk":"乌克兰语",
+			"tr":"土耳其语",
+			"th":"泰国语",
+			"sv":"瑞典语",
+			"es":"西班牙语",
+			"ru":"俄罗斯语",
+			"pt":"葡萄牙语",
+			"pl":"波兰语",
+			"ms":"马来西亚语",
+			"ko":"韩语",
+			"kk":"哈萨克斯坦",
+			"ja":"日语",
+			"it":"意大利语",
+			"id":"印尼语",
+			"hu":"匈牙利语",
+			"hi":"印地语",
+			"he":"希伯来语",
+			"zh":"中文",
+			"de":"德语",
+			"fr":"法语",
+			"en":"英语",
+			"nl":"荷兰语",
+			"cs":"捷克语",
+			"bn":"孟加拉语",
+			"ar":"阿拉伯语",
+		 },
+		welcome:{
+		"zh": "你好啊，我亲爱的朋友，希望你的每一天都是美好愉快的！",
+        "en": "Hello, my dear friend. I hope your every day is beautiful and enjoyable!",
+        "fr": "Bonjour mon cher ami. J'espère que votre quotidien est beau et agréable !",
+        "de": "Hallo mein lieber Freund. Ich hoffe, dass Ihr Tag schön und angenehm ist!",
+        "ja": "こんにちは私の親愛なる友人。 あなたの毎日が美しく楽しいものでありますように！",
+        "ko": "안녕, 내 사랑하는 친구. 당신의 매일이 아름답고 즐겁기를 바랍니다!",
+        "ru": "Привет, мой дорогой друг. Желаю, чтобы каждый твой день был прекрасен и приятен!",
+        "es": "Hola mi querido amigo. ¡Espero que cada día sea hermoso y agradable!",
+        "th": "สวัสดีเพื่อนรัก. ฉันหวังว่าทุกวันของคุณจะสวยงามและสนุกสนาน!",
+        "it": "Ciao caro amico mio. Spero che ogni tuo giorno sia bello e divertente!",
+        "pt": "Olá meu querido amigo. Espero que todos os seus dias sejam lindos e agradáveis!",
+        "vi": "Xin chào người bạn thân yêu của tôi. Tôi hy vọng mỗi ngày của bạn đều đẹp và thú vị!",
+        "ar": "مرحبا صديقي العزيز. أتمنى أن يكون كل يوم جميلاً وممتعًا!",
+        "tr": "Merhaba sevgili arkadaşım. Umarım her gününüz güzel ve keyifli geçer!",
+        "hi": "नमस्ते मेरे प्यारे दोस्त। मुझे आशा है कि आपका हर दिन सुंदर और आनंददायक हो!!",
+        "hu": "Helló kedves barátom. Remélem minden napod szép és kellemes!",
+        "uk": "Привіт, мій дорогий друже, сподіваюся, ти щодня прекрасна!",
+        "id": "Halo, temanku, semoga kamu cantik setiap hari!",
+        "ms": "Helo, sahabat saya, saya harap anda cantik setiap hari!",
+        "kk": "Сәлеметсіз бе, менің қымбатты досым, сендер күн сайын әдемісің деп үміттенемін!",
+        "cs": "Ahoj, můj drahý příteli, doufám, že jsi každý den krásná!",
+        "pl": "Witam, mój drogi przyjacielu, mam nadzieję, że jesteś piękna każdego dnia!",
+        "nl": "Hallo mijn lieve vriend, ik hoop dat elke dag goed en fijn voor je is!!",
+        "sv": "Hej min kära vän, jag hoppas att varje dag är en bra och trevlig dag för dig!",		
+		}, 
+        language_role: {  "zh": [
+    "zh-CN-YunxiNeural",
+    "zh-HK-HiuGaaiNeural",
+    "zh-HK-HiuMaanNeural",
+    "zh-HK-WanLungNeural",
+    "zh-CN-XiaoxiaoNeural",
+    "zh-CN-XiaoyiNeural",
+    "zh-CN-YunjianNeural",
+    "zh-CN-YunxiaNeural",
+    "zh-CN-YunyangNeural",
+    "zh-CN-liaoning-XiaobeiNeural",
+    "zh-TW-HsiaoChenNeural",
+    "zh-TW-YunJheNeural",
+    "zh-TW-HsiaoYuNeural",
+    "zh-CN-shaanxi-XiaoniNeural"
+  ],
+  "en": [
+    "en-AU-NatashaNeural",
+    "en-AU-WilliamNeural",
+    "en-CA-ClaraNeural",
+    "en-CA-LiamNeural",
+    "en-HK-SamNeural",
+    "en-HK-YanNeural",
+    "en-IN-NeerjaExpressiveNeural",
+    "en-IN-NeerjaNeural",
+    "en-IN-PrabhatNeural",
+    "en-IE-ConnorNeural",
+    "en-IE-EmilyNeural",
+    "en-KE-AsiliaNeural",
+    "en-KE-ChilembaNeural",
+    "en-NZ-MitchellNeural",
+    "en-NZ-MollyNeural",
+    "en-NG-AbeoNeural",
+    "en-NG-EzinneNeural",
+    "en-PH-JamesNeural",
+    "en-PH-RosaNeural",
+    "en-SG-LunaNeural",
+    "en-SG-WayneNeural",
+    "en-ZA-LeahNeural",
+    "en-ZA-LukeNeural",
+    "en-TZ-ElimuNeural",
+    "en-TZ-ImaniNeural",
+    "en-GB-LibbyNeural",
+    "en-GB-MaisieNeural",
+    "en-GB-RyanNeural",
+    "en-GB-SoniaNeural",
+    "en-GB-ThomasNeural",
+    "en-US-AvaMultilingualNeural",
+    "en-US-AndrewMultilingualNeural",
+    "en-US-EmmaMultilingualNeural",
+    "en-US-BrianMultilingualNeural",
+    "en-US-AvaNeural",
+    "en-US-AndrewNeural",
+    "en-US-EmmaNeural",
+    "en-US-BrianNeural",
+    "en-US-AnaNeural",
+    "en-US-AriaNeural",
+    "en-US-ChristopherNeural",
+    "en-US-EricNeural",
+    "en-US-GuyNeural",
+    "en-US-JennyNeural",
+    "en-US-MichelleNeural",
+    "en-US-RogerNeural",
+    "en-US-SteffanNeural"
+  ],
+	"ja": [
+    
+    "ja-JP-KeitaNeural",
+    "ja-JP-NanamiNeural"
+  ],
+  "ko": [
+    
+    "ko-KR-HyunsuNeural",
+    "ko-KR-InJoonNeural",
+    "ko-KR-SunHiNeural"
+  ],
+  "fr": [
+    "fr-BE-CharlineNeural",
+    "fr-BE-GerardNeural",
+    "fr-CA-ThierryNeural",
+    "fr-CA-AntoineNeural",
+    "fr-CA-JeanNeural",
+    "fr-CA-SylvieNeural",
+    "fr-FR-VivienneMultilingualNeural",
+    "fr-FR-RemyMultilingualNeural",
+    "fr-FR-DeniseNeural",
+    "fr-FR-EloiseNeural",
+    "fr-FR-HenriNeural",
+    "fr-CH-ArianeNeural",
+    "fr-CH-FabriceNeural"
+  ],
+  
+  "de": [
+    "de-AT-IngridNeural",
+    "de-AT-JonasNeural",
+    "de-DE-SeraphinaMultilingualNeural",
+    "de-DE-FlorianMultilingualNeural",
+    "de-DE-AmalaNeural",
+    "de-DE-ConradNeural",
+    "de-DE-KatjaNeural",
+    "de-DE-KillianNeural",
+    "de-CH-JanNeural",
+    "de-CH-LeniNeural"
+  ],
+  "ru": [
+    "ru-RU-DmitryNeural",
+    "ru-RU-SvetlanaNeural"
+  ],
+  
+  "es": [
+    "es-AR-ElenaNeural",
+    "es-AR-TomasNeural",
+    "es-BO-MarceloNeural",
+    "es-BO-SofiaNeural",
+    "es-CL-CatalinaNeural",
+    "es-CL-LorenzoNeural",
+    "es-ES-XimenaNeural",
+    "es-CO-GonzaloNeural",
+    "es-CO-SalomeNeural",
+    "es-CR-JuanNeural",
+    "es-CR-MariaNeural",
+    "es-CU-BelkysNeural",
+    "es-CU-ManuelNeural",
+    "es-DO-EmilioNeural",
+    "es-DO-RamonaNeural",
+    "es-EC-AndreaNeural",
+    "es-EC-LuisNeural",
+    "es-SV-LorenaNeural",
+    "es-SV-RodrigoNeural",
+    "es-GQ-JavierNeural",
+    "es-GQ-TeresaNeural",
+    "es-GT-AndresNeural",
+    "es-GT-MartaNeural",
+    "es-HN-CarlosNeural",
+    "es-HN-KarlaNeural",
+    "es-MX-DaliaNeural",
+    "es-MX-JorgeNeural",
+    "es-NI-FedericoNeural",
+    "es-NI-YolandaNeural",
+    "es-PA-MargaritaNeural",
+    "es-PA-RobertoNeural",
+    "es-PY-MarioNeural",
+    "es-PY-TaniaNeural",
+    "es-PE-AlexNeural",
+    "es-PE-CamilaNeural",
+    "es-PR-KarinaNeural",
+    "es-PR-VictorNeural",
+    "es-ES-AlvaroNeural",
+    "es-ES-ElviraNeural",
+    "es-US-AlonsoNeural",
+    "es-US-PalomaNeural",
+    "es-UY-MateoNeural",
+    "es-UY-ValentinaNeural",
+    "es-VE-PaolaNeural",
+    "es-VE-SebastianNeural"
+  ],
+  "vi": [
+    
+    "vi-VN-HoaiMyNeural",
+    "vi-VN-NamMinhNeural"
+  ],"th": [
+    
+    "th-TH-NiwatNeural",
+    "th-TH-PremwadeeNeural"
+  ],
+  "ar": [
+    
+    "ar-DZ-AminaNeural",
+    "ar-DZ-IsmaelNeural",
+    "ar-BH-AliNeural",
+    "ar-BH-LailaNeural",
+    "ar-EG-SalmaNeural",
+    "ar-EG-ShakirNeural",
+    "ar-IQ-BasselNeural",
+    "ar-IQ-RanaNeural",
+    "ar-JO-SanaNeural",
+    "ar-JO-TaimNeural",
+    "ar-KW-FahedNeural",
+    "ar-KW-NouraNeural",
+    "ar-LB-LaylaNeural",
+    "ar-LB-RamiNeural",
+    "ar-LY-ImanNeural",
+    "ar-LY-OmarNeural",
+    "ar-MA-JamalNeural",
+    "ar-MA-MounaNeural",
+    "ar-OM-AbdullahNeural",
+    "ar-OM-AyshaNeural",
+    "ar-QA-AmalNeural",
+    "ar-QA-MoazNeural",
+    "ar-SA-HamedNeural",
+    "ar-SA-ZariyahNeural",
+    "ar-SY-AmanyNeural",
+    "ar-SY-LaithNeural",
+    "ar-TN-HediNeural",
+    "ar-TN-ReemNeural",
+    "ar-AE-FatimaNeural",
+    "ar-AE-HamdanNeural",
+    "ar-YE-MaryamNeural",
+    "ar-YE-SalehNeural"
+  ],
+
+  "bn": [
+    
+    "bn-BD-NabanitaNeural",
+    "bn-BD-PradeepNeural",
+    "bn-IN-BashkarNeural",
+    "bn-IN-TanishaaNeural"
+  ],
+
+  "cs": [
+    
+    "cs-CZ-AntoninNeural",
+    "cs-CZ-VlastaNeural"
+  ],
+  
+  "nl": [
+    
+    "nl-BE-ArnaudNeural",
+    "nl-BE-DenaNeural",
+    "nl-NL-ColetteNeural",
+    "nl-NL-FennaNeural",
+    "nl-NL-MaartenNeural"
+  ],
+  
+  
+  "he": [
+    
+    "he-IL-AvriNeural",
+    "he-IL-HilaNeural"
+  ],
+  "hi": [
+    
+    "hi-IN-MadhurNeural",
+    "hi-IN-SwaraNeural"
+  ],
+  "hu": [
+    
+    "hu-HU-NoemiNeural",
+    "hu-HU-TamasNeural"
+  ],
+  
+  "id": [
+    
+    "id-ID-ArdiNeural",
+    "id-ID-GadisNeural"
+  ],
+  
+  "it": [
+    
+    "it-IT-GiuseppeNeural",
+    "it-IT-DiegoNeural",
+    "it-IT-ElsaNeural",
+    "it-IT-IsabellaNeural"
+  ],
+  
+  
+  "kk": [
+    
+    "kk-KZ-AigulNeural",
+    "kk-KZ-DauletNeural"
+  ],
+  
+  
+  
+  "ms": [
+    
+    "ms-MY-OsmanNeural",
+    "ms-MY-YasminNeural"
+  ],
+  
+  "pl": [
+    
+    "pl-PL-MarekNeural",
+    "pl-PL-ZofiaNeural"
+  ],
+  "pt": [
+    
+    "pt-BR-ThalitaNeural",
+    "pt-BR-AntonioNeural",
+    "pt-BR-FranciscaNeural",
+    "pt-PT-DuarteNeural",
+    "pt-PT-RaquelNeural"
+  ],
+ 
+  
+
+  "sv": [
+    
+    "sv-SE-MattiasNeural",
+    "sv-SE-SofieNeural"
+  ],
+ 
+  
+  "tr": [
+    
+    "tr-TR-AhmetNeural",
+    "tr-TR-EmelNeural"
+  ],
+  "uk": [
+    
+    "uk-UA-OstapNeural",
+    "uk-UA-PolinaNeural"
+  ],
+  
+  
+ 
+},
+        selectedLanguage: 'zh',
+        selectedVoice: '',
+        speed: 1.0,
+        volume: 1.0,
+        pitch: 0,
+        isGenerating: false,
+        apiKey: '{{basicauth}}' // Replace with your actual API key
+      };
+    },
+	watch: {
+      selectedLanguage(newLanguage) {
+        // This will run whenever selectedLanguage changes
+        this.$nextTick(() => {
+          if (this.voices.length > 0) {
+            this.selectedVoice = this.voices[0];
+          } else {
+            // Handle the case where the new language has no voices
+            this.selectedVoice = null; 
+            console.warn(`No voices available for language: ${newLanguage}`);
+          }          
+        });
+      }
+    },
+     mounted() {
+          // Ensure language_role is loaded before setting default voice
+          this.$nextTick(() => {
+            this.selectedVoice = this.voices[0];
+          });
+        },   
+ computed: {
+      voices() {
+        return this.language_role[this.selectedLanguage] || [];
+      }
+    },
+    methods: {
+      handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            this.text = e.target.result;
+          };
+          reader.readAsText(file);
+        }
+      },
+	  shiting(){
+	    if(!this.selectedVoice || this.selectedVoice=='No'){
+			
+			return alert('必须选择音色');
+		}
+		this.generateSpeech(this.welcome[this.selectedLanguage])
+		
+	  },
+      parseText() {
+		console.log('aaaaa')
+			  let lines = this.text.trim().split('\n');
+			  console.log(lines)
+
+		  let filteredLines = [];
+			for (let i = 0; i < lines.length; i++) {
+				let line = lines[i].trim();
+			const isSequenceNumber = /^\s*?\d+\s*?$/;
+			const isTimecode = /^\d{1,2}:\d{1,2}:\d{1,2}(,\d{1,3})?\s*?\-\->\s*?\d{1,2}:\d{1,2}:\d{1,2}(,\d{1,3})\s*?$/;
+
+				if (isSequenceNumber.test(line)) {
+				  // Check if the next line is a timecode
+					if (i + 1 < lines.length && isTimecode.test(lines[i + 1].trim())) {
+						continue; // Skip this line (sequence number) if the next line is a timecode
+					}
+				} else if (isTimecode.test(line)) {
+				continue; // Skip this line if it's a timecode
+			}
+
+			  if (line !== '') { // Add the line only if it's not empty after trimming
+				filteredLines.push(line);      
+			  }
+			}
+
+
+		  return filteredLines.join('\n');
+		},
+ async generateSpeech(listener_text) {
+        const workerUrl = '{{api}}';
+        const parsedText = typeof listener_text==='string'?listener_text:this.parseText();
+		if(!this.selectedVoice || this.selectedVoice=='No'){
+			
+			return alert('必须选择音色');
+		}
+		if(!parsedText){
+			
+			return alert('必须上传或输入要合成的文字');
+		}
+
+    const requestBody = {
+      "text": parsedText,
+      "voice": this.selectedVoice,
+      "rate": ((this.speed - 1) * 100).toFixed(0) + '%', // 转换为百分比字符串
+      "volume": ((this.volume - 1) * 100).toFixed(0) + '%', // 转换为百分比字符串
+      "pitch": this.pitch.toFixed(0) + 'Hz', // 转换为百分比字符串
+    };
+
+		//return
+        this.isGenerating = true;
+        {%raw%}
+        const requestString = `${window.location.origin}${workerUrl}, {"method": "POST", "body": {"text": "{{speakText}}", "voice": "${this.selectedVoice}", "volume": "+${((this.volume - 1) * 100).toFixed(0)}%", "rate": "{{String(speakSpeed)}}%", "pitch": "+${this.pitch.toFixed(0)}Hz"}, "headers": {"Authorization": "Basic ${this.apiKey}", "Content-Type": "application/json"}}`;
+        {%endraw%}
+        document.getElementById('legadoConfig').textContent = requestString;
+        try {
+          const response = await fetch(workerUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Basic ${this.apiKey}`,
+            },
+            body: JSON.stringify(requestBody),
+          });
+
+      if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
+          }
+
+          const audioBlob = await response.blob();
+		const audioUrl = URL.createObjectURL(audioBlob);
+
+		// Remove existing audio element and download button if any
+		const existingAudio = document.getElementById('audioElement');
+		if (existingAudio) {
+		  existingAudio.remove();
+		}
+		const existingDownloadButton = document.getElementById('downloadButton');
+		if (existingDownloadButton) {
+		  existingDownloadButton.remove();
+		}
+
+
+	const audioElement = document.createElement('audio');
+	audioElement.id = 'audioElement';
+	audioElement.src = audioUrl;
+	audioElement.controls = true;
+	audioElement.autoplay = true;
+
+
+	// Create download button
+	const downloadButton = document.createElement('button');
+	downloadButton.id = 'downloadButton';
+	downloadButton.textContent = '下载';
+	downloadButton.className = 'ml-2    font-bold py-2 px-4 rounded'; // Add some basic styling
+
+	// Add download functionality
+	downloadButton.addEventListener('click', () => {
+		const link = document.createElement('a');
+		link.href = audioUrl;
+		link.download = getmp3name(); // Set default filename
+		document.body.appendChild(link); // Required for Firefox
+	  link.click();
+		document.body.removeChild(link); // Clean up
+	});
+
+	if(typeof listener_text !=='string'){    
+		const audioContainer = document.getElementById('audioContainer');
+		audioContainer.appendChild(audioElement);
+	  audioContainer.appendChild(downloadButton); // Append button to the same container  
+	}
+
+
+        } catch (error) {
+          console.error('Error generating speech:', error);
+          alert("Error generating speech: " + error.message);
+        } finally {
+          this.isGenerating = false;
+        }
+      }
+    }
+  }).mount('#app');
+  
+  function getmp3name() {
+  const now = new Date();
+
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+
+  return `${year}-${month}-${day}-${hours}-${minutes}-${seconds}.mp3`;
+}
+</script>	
+</body>
+</html>
