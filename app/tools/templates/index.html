@@ -24,7 +24,7 @@
 #legadoConfig {
     background-color: #002b36; /* Solarized Dark 背景颜色 */
     color: #839496; /* Solarized Dark 文本颜色 */
-    border: 1px solid #586e75; /* Solarized Dark 边框颜色 */
+    border: 0px solid #586e75; /* Solarized Dark 边框颜色 */
     border-radius: 4px; /* 圆角 */
     padding: 10px; /* 内边距 */
     overflow: auto; /* 处理溢出 */
@@ -151,6 +151,7 @@
     data() {
       return {
         text: '',
+        audioElement: null,
 		names:{
 		  "vi":"越南语",
 			"uk":"乌克兰语",
@@ -180,7 +181,7 @@
 			"ar":"阿拉伯语",
 		 },
 		welcome:{
-		"zh": "你好啊，我亲爱的朋友，希望你的每一天都是美好愉快的！",
+		    "zh": "你好啊，我亲爱的朋友，希望你的每一天都是美好愉快的！",
         "en": "Hello, my dear friend. I hope your every day is beautiful and enjoyable!",
         "fr": "Bonjour mon cher ami. J'espère que votre quotidien est beau et agréable !",
         "de": "Hallo mein lieber Freund. Ich hoffe, dass Ihr Tag schön und angenehm ist!",
@@ -558,6 +559,10 @@
         }
       },
 	  shiting(){
+      console.log(this.selectedVoice)
+      if (this.audioElement) {
+        this.audioElement.pause();
+      }
 	    if(!this.selectedVoice || this.selectedVoice=='No'){
 			
 			return alert('必须选择音色');
@@ -566,31 +571,26 @@
 		
 	  },
       parseText() {
-		console.log('aaaaa')
 			  let lines = this.text.trim().split('\n');
-			  console.log(lines)
+        let filteredLines = [];
+        for (let i = 0; i < lines.length; i++) {
+          let line = lines[i].trim();
+        const isSequenceNumber = /^\s*?\d+\s*?$/;
+        const isTimecode = /^\d{1,2}:\d{1,2}:\d{1,2}(,\d{1,3})?\s*?\-\->\s*?\d{1,2}:\d{1,2}:\d{1,2}(,\d{1,3})\s*?$/;
 
-		  let filteredLines = [];
-			for (let i = 0; i < lines.length; i++) {
-				let line = lines[i].trim();
-			const isSequenceNumber = /^\s*?\d+\s*?$/;
-			const isTimecode = /^\d{1,2}:\d{1,2}:\d{1,2}(,\d{1,3})?\s*?\-\->\s*?\d{1,2}:\d{1,2}:\d{1,2}(,\d{1,3})\s*?$/;
+          if (isSequenceNumber.test(line)) {
+            // Check if the next line is a timecode
+            if (i + 1 < lines.length && isTimecode.test(lines[i + 1].trim())) {
+              continue; // Skip this line (sequence number) if the next line is a timecode
+            }
+          } else if (isTimecode.test(line)) {
+          continue; // Skip this line if it's a timecode
+        }
 
-				if (isSequenceNumber.test(line)) {
-				  // Check if the next line is a timecode
-					if (i + 1 < lines.length && isTimecode.test(lines[i + 1].trim())) {
-						continue; // Skip this line (sequence number) if the next line is a timecode
-					}
-				} else if (isTimecode.test(line)) {
-				continue; // Skip this line if it's a timecode
-			}
-
-			  if (line !== '') { // Add the line only if it's not empty after trimming
-				filteredLines.push(line);      
-			  }
-			}
-
-
+          if (line !== '') { // Add the line only if it's not empty after trimming
+          filteredLines.push(line);      
+          }
+        }
 		  return filteredLines.join('\n');
 		},
  async generateSpeech(listener_text) {
@@ -634,48 +634,47 @@
           }
 
           const audioBlob = await response.blob();
-		const audioUrl = URL.createObjectURL(audioBlob);
+          const audioUrl = URL.createObjectURL(audioBlob);
 
-		// Remove existing audio element and download button if any
-		const existingAudio = document.getElementById('audioElement');
-		if (existingAudio) {
-		  existingAudio.remove();
-		}
-		const existingDownloadButton = document.getElementById('downloadButton');
-		if (existingDownloadButton) {
-		  existingDownloadButton.remove();
-		}
+          // Remove existing audio element and download button if any
+          const existingAudio = document.getElementById('audioElement');
+          if (existingAudio) {
+            existingAudio.remove();
+          }
+          const existingDownloadButton = document.getElementById('downloadButton');
+          if (existingDownloadButton) {
+            existingDownloadButton.remove();
+          }
+  
+        audioElement = document.createElement('audio');
+        audioElement.id = 'audioElement';
+        audioElement.src = audioUrl;
+        audioElement.controls = true;
+        audioElement.autoplay = true;
+        this.audioElement = audioElement; // 存储当前播放的音频元素
 
 
-	const audioElement = document.createElement('audio');
-	audioElement.id = 'audioElement';
-	audioElement.src = audioUrl;
-	audioElement.controls = true;
-	audioElement.autoplay = true;
+        // Create download button
+        const downloadButton = document.createElement('button');
+        downloadButton.id = 'downloadButton';
+        downloadButton.textContent = '下载';
+        downloadButton.className = 'ml-2    font-bold py-2 px-4 rounded'; // Add some basic styling
 
+        // Add download functionality
+        downloadButton.addEventListener('click', () => {
+          const link = document.createElement('a');
+          link.href = audioUrl;
+          link.download = getmp3name(); // Set default filename
+          document.body.appendChild(link); // Required for Firefox
+          link.click();
+          document.body.removeChild(link); // Clean up
+        });
 
-	// Create download button
-	const downloadButton = document.createElement('button');
-	downloadButton.id = 'downloadButton';
-	downloadButton.textContent = '下载';
-	downloadButton.className = 'ml-2    font-bold py-2 px-4 rounded'; // Add some basic styling
-
-	// Add download functionality
-	downloadButton.addEventListener('click', () => {
-		const link = document.createElement('a');
-		link.href = audioUrl;
-		link.download = getmp3name(); // Set default filename
-		document.body.appendChild(link); // Required for Firefox
-	  link.click();
-		document.body.removeChild(link); // Clean up
-	});
-
-	if(typeof listener_text !=='string'){    
-		const audioContainer = document.getElementById('audioContainer');
-		audioContainer.appendChild(audioElement);
-	  audioContainer.appendChild(downloadButton); // Append button to the same container  
-	}
-
+        if(typeof listener_text !=='string'){    
+          const audioContainer = document.getElementById('audioContainer');
+          audioContainer.appendChild(audioElement);
+          audioContainer.appendChild(downloadButton); // Append button to the same container  
+        }
 
         } catch (error) {
           console.error('Error generating speech:', error);
