@@ -49,10 +49,10 @@ async def get_headers(request: Request) -> dict:
 async def get_voices(
     keyword: str = Query(default="", example="", title="过滤关键词", description="过滤关键词"),
     format: str = Query(
-        default="full",
-        example="full",
+        default="short",
+        example="short",
         title="返回内容",
-        description="返回内容，可选 full / short，默认为 full 即全量内容",
+        description="返回内容，可选 full / short，默认为 short 即简洁列表",
     ),
 ):
     @local_cache.cache_result(ttl=86400)
@@ -60,7 +60,7 @@ async def get_voices(
         """获取所有语音列表"""
         return await edge_tts.list_voices()
 
-    async def _get_voices(keyword: str = None, format: str = "full"):
+    async def _get_voices(keyword: str = None, format: str = "short"):
         """根据关键词获取语音列表"""
         data = await _get_all_voices()
         if keyword:
