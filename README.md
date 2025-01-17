@@ -3,7 +3,9 @@
 ## 项目介绍
 本项目基于 Edge-TTS 和 FastFlyer 开发框架，可以直接私有化部署提供语音合成服务，支持和源阅读 APP 无缝对接。
 
-- 体验地址：[点击前往](https://tts-demo.zhang.ge/speech/docs)
+- 体验地址：
+  - [在线合成](https://tts-demo.zhang.ge/speech/tools)
+  - [在线调试](https://tts-demo.zhang.ge/speech/docs)
 - 账号密码：guest / guest
 
 `注：小水管，仅供测试，不保证可用性。` 
