@@ -8,7 +8,7 @@ import base64
 from os import getenv, path
 import edge_tts
 from fastapi import Request
-from fastapi.responses import PlainTextResponse, JSONResponse, HTMLResponse
+from fastapi.responses import PlainTextResponse, JSONResponse
 from fastflyer.schemas import DataResponse
 from fastapi.exceptions import HTTPException
 from fastapi import Query
