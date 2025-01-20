@@ -49,7 +49,7 @@ async def get_headers(request: Request) -> dict:
     return {"headers": {"Authorization": f"Basic {encoded_credentials}", "Content-Type": "application/json"}}
 
 
-@router.get("/", summary="实时获取所有语音列表")
+@router.get("/online", summary="在线合成工具", include_in_schema=False)
 async def tools(request: Request):
     html_args = {}
     html_args["prefix"] = config.PREFIX

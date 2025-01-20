@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="description" content="在线语音合成、文字转语音、文字合成配音服务，基于edge-tts语音合成服务提供"/>
 	<meta name="keyword" content="语音合成,文字合成,文字配音,合成语音,edge-tts"/>
-  <title>语音合成-文字转语音-srt字幕转语音 | FastTTS</title>
+  <title>FastTTS | 语音合成-文字转语音-srt字幕转语音</title>
   <link rel="icon" type="image/x-icon" href="{{prefix}}/app/static/favicon.ico">
   <link href="{{prefix}}/app/static/style.css?ver=1.0" rel="stylesheet">
   <script src="{{prefix}}/app/static/vue.js"></script>
@@ -68,7 +68,7 @@
         <li class="layui-nav-item"><a href="https://github.com/jagerzhang/FastTTS" target="_blank" >源码仓库</a></li>
 		</ul>
 <div class="container mx-auto p-4 md:p-8" id="app">
-  <h1 class="text-3xl font-bold mb-2 text-center text-gray-800">文字合成语音/SRT字幕转语音</h1>
+  <h1 class="text-3xl font-bold mb-2 text-center text-gray-800">FastTTS-文字合成语音/SRT字幕转语音</h1>
 
   <div class="bg-white rounded-lg shadow-md p-6 mb-6">
       <div class="mb-4">
@@ -76,7 +76,7 @@
         <input type="file" id="fileInput" @change="handleFileSelect" accept=".srt,.txt" class="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
       </div>
     <div class="mb-4">
-      <label for="textInput" class="block  font-medium mb-2 ">输入文本<span class="ms-2 text-xs text-gray-700">行尾加<code>[50]</code>代表添加50毫秒静音，<code>[500]</code>代表加500毫秒静音，中括号内数字代表静音毫秒数</span></label>
+      <label for="textInput" class="block  font-medium mb-2 ">输入文本<!--span class="ms-2 text-xs text-gray-700">行尾加<code>[50]</code>代表添加50毫秒静音，<code>[500]</code>代表加500毫秒静音，中括号内数字代表静音毫秒数</span--></label>
       <textarea placeholder="选择txt文本或srt字幕上传，或直接在此输入要配音的文字" id="textInput" v-model="text" rows="5" class="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
     </div>
     {% raw %}
