@@ -616,7 +616,7 @@
 		//return
         this.isGenerating = true;
         {%raw%}
-        const requestString = `${window.location.origin}${workerUrl}, {"method": "POST", "body": {"text": "{{speakText}}", "voice": "${this.selectedVoice}", "volume": "+${((this.volume - 1) * 100).toFixed(0)}%", "rate": "{{String(speakSpeed)}}%", "pitch": "+${this.pitch.toFixed(0)}Hz"}, "headers": {"Authorization": "Basic ${this.apiKey}", "Content-Type": "application/json"}}`;
+        const requestString = `${window.location.origin}${workerUrl}, {"method": "POST", "body": {"text": "{{speakText}}", "voice": "${this.selectedVoice}", "volume": "+${((this.volume - 1) * 100).toFixed(0)}%", "rate": "{{String(speakSpeed)}}%", "pitch": "+${this.pitch.toFixed(0)}Hz", "replacement": 1}, "headers": {"Authorization": "Basic ${this.apiKey}", "Content-Type": "application/json"}}`;
         {%endraw%}
         document.getElementById('legadoConfig').textContent = requestString;
         try {
