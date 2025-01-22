@@ -112,6 +112,7 @@ async def legado_url(request: Request, params: TTSToolsRequest = Query()):
             "volume": params.volume,
             "rate": "{{String(speakSpeed)}}%",
             "pitch": params.pitch,
+            "replacement": 1,
         },
     }
     headers = await get_headers(request)
@@ -136,6 +137,7 @@ async def legado_import(request: Request, params: TTSToolsRequest = Query()):
             "volume": params.volume,
             "rate": "{{String(speakSpeed)}}%",
             "pitch": params.pitch,
+            "replacement": 1,
         },
     }
 
