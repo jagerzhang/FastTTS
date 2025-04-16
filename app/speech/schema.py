@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field, validator, constr, root_validator
-import re
 
 
 class TTSBaseRequest(BaseModel):
@@ -40,7 +39,7 @@ class TTSFullRequest(TTSBaseRequest):
         default=0,
         example=0,
         title="是否启用文本替换机制",
-        description="默认不启用，如果启用，文本内容为空或纯字符校验不通过时将替换文本内容为默认错误信息，规避源阅读APP里面内容无文字导致请求失败",
+        description="默认不启用，如果启用，文本内容为空时将替换文本内容为默认错误信息，规避源阅读APP里面内容无文字导致请求失败",
     )
 
     @validator("rate", pre=True)
@@ -61,12 +60,5 @@ class TTSFullRequest(TTSBaseRequest):
                 values["text"] = "请求内容为空"
             else:
                 raise ValueError("文本内容不能为空")
-
-        # 检查文本是否包含至少一个字母或汉字
-        if not re.search(r"[a-zA-Z\u4e00-\u9fa5]", text):
-            if replacement:
-                values["text"] = "请求内容没有文字"
-            else:
-                raise ValueError("文本内容必须包含至少一个字母或汉字")
 
         return values

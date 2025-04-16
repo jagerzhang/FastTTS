@@ -2,6 +2,7 @@
 """
 路由定义
 """
+import re
 import random
 from io import BytesIO
 from asyncio import sleep
@@ -11,12 +12,27 @@ from fastapi.responses import StreamingResponse
 from fastflyer.schemas import DataResponse
 from fastflyer import APIRouter, logger
 from fastkit.cache import get_cacheout_pool
+from pydub import AudioSegment
+
 from .schema import TTSFullRequest
 
 
 router = APIRouter(tags=["语音合成"])
 
 local_cache = get_cacheout_pool("tts")
+
+
+def check_text(text):
+    """检测文本内容是否有文字"""
+    if not re.search(r"[a-zA-Z\u4e00-\u9fa5]", text):
+        return False
+    return True
+
+
+def generated_empty_audio(duration: int = 1000):
+    """生成空白音频文件"""
+    silence = AudioSegment.silent(duration=duration)
+    return BytesIO(silence.export(format="mp3").read())
 
 
 async def get_origin_url(request: Request) -> str:
@@ -53,6 +69,11 @@ async def stream(params: TTSFullRequest):
     """
     语音合成音频流接口
     """
+    # 当传入内容没有文字时，返回1秒空白音频，避免源阅读报错终止
+    if not check_text(params.text):
+        audio_stream = generated_empty_audio()
+        return StreamingResponse(audio_stream, media_type="audio/mp3")
+
     audio_stream = stream_audio(
         text=params.text, voice=params.voice, rate=params.rate, volume=params.volume, pitch=params.pitch
     )
@@ -64,6 +85,12 @@ async def make_file(params: TTSFullRequest):
     """
     语音合成音频文件接口
     """
+    # 当传入内容没有文字时，返回1秒空白音频，避免源阅读报错终止
+    if not check_text(params.text):
+        audio_stream = generated_empty_audio()
+        return StreamingResponse(audio_stream, media_type="audio/mp3",
+                                 headers={"Content-Disposition": "attachment; filename=output.mp3"})
+
     audio_buffer = BytesIO()
     async for chunk in stream_audio(
         text=params.text, voice=params.voice, rate=params.rate, volume=params.volume, pitch=params.pitch

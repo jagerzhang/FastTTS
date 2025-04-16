@@ -9,6 +9,8 @@ COPY dependences.txt /tmp/
 RUN apt-get install $(cat /tmp/dependences.txt | tr "\n" " ") vim -y && \
     apt-get clean
 
+COPY static/ffmpeg /usr/bin/ffmpeg
+
 # 安装应用自定义依赖
 ENV flyer_no_auth_path_prefixs=/tools
 COPY requirements.txt /tmp/
