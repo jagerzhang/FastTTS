@@ -36,10 +36,16 @@ class TTSFullRequest(TTSBaseRequest):
         default="+0%", example="+0%", title="朗读语速", description="调整语速，例如-50%，慢速了50%", embed=True
     )
     replacement: int = Field(
-        default=0,
-        example=0,
+        default=1,
+        example=1,
         title="是否启用文本替换机制",
-        description="默认不启用，如果启用，文本内容为空时将替换文本内容为默认错误信息，规避源阅读APP里面内容无文字导致请求失败",
+        description="默认启用，如果启用，文本内容为空时将替换文本内容为默认错误信息，没有内容时将返回空白音频，规避源阅读APP里面内容无文字导致请求失败",
+    )
+    emptyAudioDuration: int = Field(
+        default=1000,
+        example=1000,
+        title="空文本生成空白音频时长",
+        description="空文本生成空白音频时长，单位为毫秒，默认为1000ms，即遇到空文本时，会返回一个1秒的空白音频",
     )
 
     @validator("rate", pre=True)

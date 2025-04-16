@@ -6,10 +6,9 @@ WORKDIR /fastflyer
 
 # 安装系统自定义依赖
 COPY dependences.txt /tmp/
-RUN apt-get install $(cat /tmp/dependences.txt | tr "\n" " ") vim -y && \
+RUN apt-get update && \
+    apt-get install $(cat /tmp/dependences.txt | tr "\n" " ") vim -y && \
     apt-get clean
-
-COPY static/ffmpeg /usr/bin/ffmpeg
 
 # 安装应用自定义依赖
 ENV flyer_no_auth_path_prefixs=/tools

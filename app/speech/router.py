@@ -70,8 +70,8 @@ async def stream(params: TTSFullRequest):
     语音合成音频流接口
     """
     # 当传入内容没有文字时，返回1秒空白音频，避免源阅读报错终止
-    if not check_text(params.text):
-        audio_stream = generated_empty_audio()
+    if not check_text(params.text) and params.replacement:
+        audio_stream = generated_empty_audio(params.emptyAudioDuration)
         return StreamingResponse(audio_stream, media_type="audio/mp3")
 
     audio_stream = stream_audio(
@@ -86,8 +86,8 @@ async def make_file(params: TTSFullRequest):
     语音合成音频文件接口
     """
     # 当传入内容没有文字时，返回1秒空白音频，避免源阅读报错终止
-    if not check_text(params.text):
-        audio_stream = generated_empty_audio()
+    if not check_text(params.text) and params.replacement:
+        audio_stream = generated_empty_audio(params.emptyAudioDuration)
         return StreamingResponse(audio_stream, media_type="audio/mp3",
                                  headers={"Content-Disposition": "attachment; filename=output.mp3"})
 
