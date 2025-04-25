@@ -56,7 +56,7 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/fastflyer:${{ github.ref_name }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/fastflyer:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/fast-tts:${{ github.ref_name }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/fast-tts:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
