@@ -1,4 +1,6 @@
 ## FastTTS: 简单语音合成服务
+![Verison](https://github.com/jagerzhang/FastFlyer/raw/master/fastflyer/static/Python-3.6.8+-icon.svg)  [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jagerzhang/FastTTS)
+
 ## 项目介绍
 本项目基于 Edge-TTS 和 FastFlyer 开发框架，可以直接私有化部署提供语音合成服务，支持和源阅读 APP 无缝对接。
 
